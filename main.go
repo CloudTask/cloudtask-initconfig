@@ -21,7 +21,7 @@ type Configuration struct {
 	ServerConfig struct {
 		WebsiteHost string                 `json:"websitehost"`
 		CenterHost  string                 `json:"centerhost"`
-		Storage     map[string]interface{} `json:"storage"`
+		StorageDriver     map[string]interface{} `json:"storagedriver"`
 	} `json:"serverconfig"`
 }
 
@@ -39,8 +39,14 @@ func initServerConfigData(conf *Configuration) (string, []byte, error) {
 		return "", nil, err
 	}
 
-	<-event
 	defer conn.Close()
+	<-event
+	if ret, _, _ := conn.Exists(conf.Zookeeper.Root); !ret {
+		if _, err := conn.Create(conf.Zookeeper.Root, []byte{}, zkFlags, zkACL); err != nil {
+			return "", nil, fmt.Errorf("zookeeper root: %s failure", conf.Zookeeper.Root)
+		}
+	}
+
 	serverConfigPath := conf.Zookeeper.Root + "/ServerConfig"
 	ret, _, err := conn.Exists(serverConfigPath)
 	if err != nil {
@@ -84,7 +90,7 @@ func main() {
 
 	conf, err := readConfiguration()
 	if err != nil {
-		fmt.Errorf("ServerConfig.json invalid, %s", err)
+		fmt.Printf("ServerConfig.json invalid, %s", err)
 		return
 	}
 
@@ -98,10 +104,10 @@ func main() {
 
 	path, data, err := initServerConfigData(conf)
 	if err != nil {
-		fmt.Errorf("init server config failure, %s", err)
+		fmt.Printf("init server config failure, %s", err)
 		return
 	}
 	fmt.Printf("zookeeper path: %s\n", path)
-	fmt.Printf("data: %s\n", string(data))
-	fmt.Printf("init to zookeeper successed!\n")
+	fmt.Printf("serverconfig: %s\n", string(data))
+	fmt.Printf("initconfig to zookeeper successed!\n")
 }
