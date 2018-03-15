@@ -1,13 +1,12 @@
 package main
 
 import "github.com/samuel/go-zookeeper/zk"
-import yaml "gopkg.in/yaml.v2"
 
 import (
-	"flag"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"time"
 )
@@ -16,9 +15,14 @@ import (
 //zookeeper cluster parameters.
 type Configuration struct {
 	Zookeeper struct {
-		Hosts string `yaml:"hosts" json:"hosts"`
-		Root  string `yaml:"root" json:"root"`
-	} `yaml:"zookeeper" json:"zookeeper"`
+		Hosts string `json:"hosts"`
+		Root  string `json:"root"`
+	} `json:"zookeeper"`
+	ServerConfig struct {
+		WebsiteHost string                 `json:"websitehost"`
+		CenterHost  string                 `json:"centerhost"`
+		Storage     map[string]interface{} `json:"storage"`
+	} `json:"serverconfig"`
 }
 
 var (
@@ -27,47 +31,28 @@ var (
 	zkConnTimeout = time.Second * 15
 )
 
-func readConfiguration(file string) (*Configuration, error) {
+func initServerConfigData(conf *Configuration) (string, []byte, error) {
 
-	fd, err := os.OpenFile(file, os.O_RDONLY, 0777)
-	if err != nil {
-		return nil, err
-	}
-
-	defer fd.Close()
-	buf, err := ioutil.ReadAll(fd)
-	if err != nil {
-		return nil, err
-	}
-
-	conf := &Configuration{}
-	if err := yaml.Unmarshal(buf, conf); err != nil {
-		return nil, err
-	}
-	return conf, nil
-}
-
-func initServerConfigData(hosts string, root string) (string, []byte, error) {
-
-	servers := strings.Split(hosts, ",")
-	conn, event, err := zk.Connect(servers, zkConnTimeout)
+	hosts := strings.Split(conf.Zookeeper.Hosts, ",")
+	conn, event, err := zk.Connect(hosts, zkConnTimeout)
 	if err != nil {
 		return "", nil, err
 	}
 
 	<-event
 	defer conn.Close()
-	serverConfigPath := root + "/ServerConfig"
+	serverConfigPath := conf.Zookeeper.Root + "/ServerConfig"
 	ret, _, err := conn.Exists(serverConfigPath)
 	if err != nil {
 		return "", nil, err
 	}
 
-	data, err := ioutil.ReadFile("./ServerConfig.json")
-	if err != nil {
-		return "", nil, fmt.Errorf("ServerConfig.json read failure, %s", err)
+	buf := bytes.NewBuffer([]byte{})
+	if err = json.NewEncoder(buf).Encode(conf.ServerConfig); err != nil {
+		return "", nil, err
 	}
 
+	data := buf.Bytes()
 	if !ret {
 		if _, err := conn.Create(serverConfigPath, data, zkFlags, zkACL); err != nil {
 			return "", nil, err
@@ -80,38 +65,38 @@ func initServerConfigData(hosts string, root string) (string, []byte, error) {
 	return serverConfigPath, data, nil
 }
 
+func readConfiguration() (*Configuration, error) {
+
+	data, err := ioutil.ReadFile("./ServerConfig.json")
+	if err != nil {
+		return nil, err
+	}
+
+	conf := &Configuration{}
+	err = json.NewDecoder(bytes.NewBuffer(data)).Decode(conf)
+	if err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+
 func main() {
 
-	var (
-		configFile string
-		zkHosts    string
-		zkRoot     string
-	)
-
-	flag.StringVar(&configFile, "f", "./config.yaml", "coudtask initconfig etc.")
-	flag.StringVar(&zkHosts, "hosts", "127.0.0.1:2181", "zookeeper hosts.")
-	flag.StringVar(&zkRoot, "root", "/cloudtask", "zookeeper root path.")
-	flag.Parse()
-
-	if configFile != "" {
-		conf, err := readConfiguration(configFile)
-		if err != nil {
-			fmt.Errorf("config file invalid, %s", err)
-			return
-		}
-		zkHosts = conf.Zookeeper.Hosts
-		zkRoot = conf.Zookeeper.Root
+	conf, err := readConfiguration()
+	if err != nil {
+		fmt.Errorf("ServerConfig.json invalid, %s", err)
+		return
 	}
 
-	if ret := strings.HasPrefix(zkRoot, "/"); !ret {
-		zkRoot = "/" + zkRoot
+	if ret := strings.HasPrefix(conf.Zookeeper.Root, "/"); !ret {
+		conf.Zookeeper.Root = "/" + conf.Zookeeper.Root
 	}
 
-	if ret := strings.HasSuffix(zkRoot, "/"); ret {
-		zkRoot = strings.TrimSuffix(zkRoot, "/")
+	if ret := strings.HasSuffix(conf.Zookeeper.Root, "/"); ret {
+		conf.Zookeeper.Root = strings.TrimSuffix(conf.Zookeeper.Root, "/")
 	}
 
-	path, data, err := initServerConfigData(zkHosts, zkRoot)
+	path, data, err := initServerConfigData(conf)
 	if err != nil {
 		fmt.Errorf("init server config failure, %s", err)
 		return

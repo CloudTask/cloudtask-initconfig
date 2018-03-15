@@ -1,19 +1,25 @@
 {
-	"websitehost": "192.168.2.80:8901",
-	"centerhost": "192.168.2.80:8985",
-	"storage": {
-		"mongo": {
-		    "hosts": "192.168.2.80:27017,192.168.2.81:27017,192.168.2.82:27017",
-		    "database": "cloudtask",
-		    "auth": {
-			    "user": "datastoreAdmin",
-			    "password": "ds4dev"
-		    },
-		    "options": [
-			    "maxPoolSize=20",
-			    "replicaSet=mgoCluster",
-			    "authSource=admin"
-		    ]
-        }
-    }
+	"zookeeper": {
+		"hosts": "192.168.2.80:2181,192.168.2.81:2181,192.168.2.82:2181",
+  		"root": "/cloudtask"
+	},
+	"serverconfig":{
+		"websitehost": "192.168.2.80:8901",
+		"centerhost": "192.168.2.80:8985",
+		"storage": {
+			"mongo": {
+		    	"hosts": "192.168.2.80:27017,192.168.2.81:27017,192.168.2.82:27017",
+		    	"database": "cloudtask",
+		    	"auth": {
+			    	"user": "datastoreAdmin",
+			    	"password": "ds4dev"
+		    	},
+		    	"options": [
+			    	"maxPoolSize=20",
+			    	"replicaSet=mgoCluster",
+			    	"authSource=admin"
+		    	]
+        	}
+		}
+	}
 }
