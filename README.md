@@ -107,3 +107,5 @@ $ ./zkCli.sh -server 192.168.2.80
     }
 }
 ```
+### License
+cloudtask source code is licensed under the [Apache Licence 2.0](http://www.apache.org/licenses/LICENSE-2.0.html). 
