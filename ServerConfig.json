@@ -4,8 +4,8 @@
         "root": "/cloudtask"
     },
     "serverconfig": {
-        "websitehost": "192.168.2.80:8091",
-        "centerhost": "192.168.2.80:8985",
+        "websitehost": "http://192.168.2.80:8091",
+        "centerhost": "http://192.168.2.80:8985",
         "storagedriver": {
             "mongo": {
                 "hosts": "192.168.2.80:27017,192.168.2.81:27017,192.168.2.82:27017",
