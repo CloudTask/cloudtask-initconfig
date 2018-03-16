@@ -5,6 +5,7 @@ import "github.com/samuel/go-zookeeper/zk"
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -19,9 +20,9 @@ type Configuration struct {
 		Root  string `json:"root"`
 	} `json:"zookeeper"`
 	ServerConfig struct {
-		WebsiteHost string                 `json:"websitehost"`
-		CenterHost  string                 `json:"centerhost"`
-		StorageDriver     map[string]interface{} `json:"storagedriver"`
+		WebsiteHost   string                 `json:"websitehost"`
+		CenterHost    string                 `json:"centerhost"`
+		StorageDriver map[string]interface{} `json:"storagedriver"`
 	} `json:"serverconfig"`
 }
 
@@ -71,9 +72,9 @@ func initServerConfigData(conf *Configuration) (string, []byte, error) {
 	return serverConfigPath, data, nil
 }
 
-func readConfiguration() (*Configuration, error) {
+func readConfiguration(configFile string) (*Configuration, error) {
 
-	data, err := ioutil.ReadFile("./ServerConfig.json")
+	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +89,13 @@ func readConfiguration() (*Configuration, error) {
 
 func main() {
 
-	conf, err := readConfiguration()
+	var configFile string
+	flag.StringVar(&configFile, "f", "./ServerConfig.json", "server config file path.")
+	flag.Parse()
+
+	conf, err := readConfiguration(configFile)
 	if err != nil {
-		fmt.Printf("ServerConfig.json invalid, %s", err)
+		fmt.Printf("server config file invalid, %s", err)
 		return
 	}
 
