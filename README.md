@@ -15,9 +15,19 @@ cloudtask zookeeper configuration path is `/cloudtask/ServerConfig`
 
 ### Usage
 
+> binaries exe
 ``` bash
 $ ./cloudtask-initconfig -f ./ServerConfig.json
 ```
+
+> docker image
+``` bash
+$ docker run -it --rm \
+  -v /opt/cloudtask/ServerConfig.json:/cloudtask-initconfig/ServerConfig.json \
+  --name=cloudtask-initconfig \
+  cloudtask/cloudtask-initconfig:1.0.0
+```
+
 
 ### Output Successed
 ``` bash
