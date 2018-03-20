@@ -15,7 +15,7 @@ cloudtask zookeeper configuration path is `/cloudtask/ServerConfig`
 
 ### Usage
 
-> binaries exe
+> binary
 ``` bash
 $ ./cloudtask-initconfig -f ./ServerConfig.json
 ```
